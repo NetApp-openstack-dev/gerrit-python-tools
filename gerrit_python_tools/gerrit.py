@@ -685,8 +685,8 @@ class CommentAdded(object):
                 logger.debug("Change %s: %s" % (self.change_id, out))
 
                 # Send downloaded change to upstream
-                args = ['git-review', '-y', '-r', 'upstream', self.branch,
-                        '-t', self.topic]
+                args = ['git-review', '-R', '-y', '-r', 'upstream',
+                        self.branch, '-t', self.topic]
                 logger.debug('Change %s: running: %s'
                              % (self.change_id, ' '.join(args)))
                 out = subprocess.check_output(args,
