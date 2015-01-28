@@ -403,34 +403,34 @@ class CommentAdded(object):
         return self._data['patchSet']['revision']
 
     @property
-    def change_owner_username(self):
+    def patchset_uploader_username(self):
         """
         Returns the gerrit username of the author.
 
         @returns - String | None
 
         """
-        return self._data['change']['owner'].get('username')
+        return self._data['patchSet']['uploader'].get('username')
 
     @property
-    def change_owner_name(self):
+    def patchSet_uploader_name(self):
         """
         Returns the full name of the author.
 
         @returns - String | None
 
         """
-        return self._data['change']['owner'].get('name')
+        return self._data['patchSet']['uploader'].get('name')
 
     @property
-    def change_owner_email(self):
+    def patchset_uploader_email(self):
         """
         Returns the email address of the author
 
         @returns - String | None
 
         """
-        return self._data['change']['owner'].get('email')
+        return self._data['patchSet']['uploader'].get('email')
 
     def is_upstream_project(self):
         """
@@ -649,9 +649,9 @@ class CommentAdded(object):
             # This every upstream user sharing the same key is kinda shady.
             # Default back to the configured user if username doesnt exist.
             # should fail in this case
-            username = self.change_owner_username
-            name = self.change_owner_name
-            email = self.change_owner_email
+            username = self.patchset_uploader_username
+            name = self.patchSet_uploader_name
+            email = self.patchset_uploader_email
             if not username:
                 logger.debug("Change %s: Unable to use author credentials."
                              " Defaulting to configured credentials."
