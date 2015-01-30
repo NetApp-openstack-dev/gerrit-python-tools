@@ -161,12 +161,32 @@ class SSH(object):
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         client.connect(self._host, **(self._ssh_kwargs))
-        _, stdout, stderr = client.exec_command(cmd)
 
-        retcode = stdout.channel.recv_exit_status()
-        stream = stdout if not retcode else stderr
-        output = stream.read()
+        chan = client.get_transport().open_session()
+        chan.exec_command(cmd)
+
+        contents = StringIO.StringIO()
+        error = StringIO.StringIO()
+
+        while not chan.exit_status_ready():
+
+            if chan.recv_ready():
+                    data = chan.recv(1024)
+                    while data:
+                        contents.write(data)
+                        data = chan.recv(1024)
+
+            if chan.recv_stderr_ready():
+
+                    error_buff = chan.recv_stderr(1024)
+                    while error_buff:
+                        error.write(error_buff)
+                        error_buff = chan.recv_stderr(1024)
+
+        retcode = chan.recv_exit_status()
+        output = contents.getvalue()
         client.close()
+
         logger.debug(output)
         return retcode, output
 
