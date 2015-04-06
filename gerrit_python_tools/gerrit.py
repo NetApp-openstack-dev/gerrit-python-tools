@@ -1328,6 +1328,8 @@ class Project(object):
             logger.debug(
                 "Project %s: Created directory %s" % (self.name, repo_dir)
             )
+        elif not self.upstream:
+            return
 
         # Save the current working directory
         old_cwd = os.getcwd()
