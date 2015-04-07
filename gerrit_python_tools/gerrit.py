@@ -1378,7 +1378,7 @@ class Project(object):
 
             # Find refs that should be removed.
             prune_refset = gerrit_refset - origin_refset
-            if self.preserve_prefix:
+            if not self.preserve_prefix is None:
                 msg = "Project %s: Preserving refs with prefixes of %s" \
                       % (self.name, self.preserve_prefix)
                 logger.debug(msg)
