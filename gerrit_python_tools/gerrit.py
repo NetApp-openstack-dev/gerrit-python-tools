@@ -24,6 +24,8 @@ log.get_logger('paramiko').setLevel(logging.ERROR)
 # Get a logger
 logger = log.get_logger()
 
+PRESERVE_ALL_BRANCHES = "ALL"
+
 
 class SSHStream(StoppableThread):
     """
@@ -1378,7 +1380,12 @@ class Project(object):
 
             # Find refs that should be removed.
             prune_refset = gerrit_refset - origin_refset
-            if not self.preserve_prefix is None:
+            if self.preserve_prefix == PRESERVE_ALL_BRANCHES:
+                msg = "Project %s: Preserving all refs" % self.name
+                logger.debug(msg)
+                print msg
+                prune_refset = set([])
+            elif not self.preserve_prefix is None:
                 msg = "Project %s: Preserving refs with prefixes of %s" \
                       % (self.name, self.preserve_prefix)
                 logger.debug(msg)
