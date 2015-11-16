@@ -499,7 +499,64 @@ class CommentAdded(object):
         trigger = self._conf['upstream']['trigger']
         logger.debug("Change %s: Trigger '%s'" % (self.change_id, trigger))
         first_line = self.comment.splitlines()[0]
-        return trigger in first_line
+        return (trigger in first_line) or self.is_forced()
+
+    def is_forced(self):
+        """
+        Determines if the triggering comment is a force-send-upstream comment.
+        """
+        for line in self.comment.splitlines():
+            if re.match(r'^force-send-upstream$', line):
+                return True
+        return False
+
+    def stringify_approvals(self, approvals):
+        """
+        Return a pretty string of the values for each label, one label per
+        line.
+        """
+        labels = get_labels_for_upstream(self._conf, self.project)
+
+        for approval in approvals:
+            label = labels.get(approval.name)
+            if label:
+                label.add_approval(approval)
+
+        formatted_string = ''
+        for label in labels.values():
+            formatted_string += '%s: %s\n' % (label.name, label._values)
+
+        return formatted_string
+
+    def is_release_approved(self, approvals):
+        """
+        Examines approvals on comment added. Must be release approved
+        before sending upstream.
+
+        @param approvals - List of approvals
+        @returns - Boolean
+
+        """
+        labels = get_labels_for_upstream(self._conf, self.project)
+
+        for approval in approvals:
+            label = labels.get(approval.name)
+            if label:
+                label.add_approval(approval)
+
+        # Debugging
+        for label in labels.values():
+            if label.approved():
+                str_ = "approved"
+            else:
+                str_ = "not approved"
+            logger.debug("Change %s: Label %s is %s"
+                         % (self.change_id, label.name, str_))
+
+        if labels.get('Release'):
+            return labels.get('Release').approved()
+        else:
+            return False
 
     def is_upstream_approved(self, approvals):
         """
@@ -609,6 +666,7 @@ class CommentAdded(object):
         @param upstream - gerrit.Remote upstream object
 
         """
+
         # Check if upstream project before doing anything.
         if not self.is_upstream_project():
             return
@@ -624,13 +682,30 @@ class CommentAdded(object):
         approvals = self.get_approvals(downstream.SSH())
 
         # Check to see if comment has necessary approvals.
-        if not self.is_upstream_approved(approvals):
-            msg = ("Could not send to upstream: One or more labels"
-                   " not approved.")
+        if self.is_forced():
+            if not self.is_release_approved(approvals):
+                msg = "Could not send to upstream: Release not approved."
+                logger.debug("Change %s: %s" % (self.change_id, msg))
+                ssh.exec_once('gerrit review -m %s %s'
+                              % (pipes.quote(msg), self.revision))
+                return
+            msg = ("***WARNING***\n%s (%s) has requested a forced upstream "
+                   "push. Bypassing all votes except for Release...\n\n"
+                   "Current votes are:\n\n%s"
+                   % (self._data['author']['name'],
+                      self._data['author']['email'],
+                      self.stringify_approvals(approvals)))
             logger.debug("Change %s: %s" % (self.change_id, msg))
             ssh.exec_once('gerrit review -m %s %s'
                           % (pipes.quote(msg), self.revision))
-            return
+        else:
+            if not self.is_upstream_approved(approvals):
+                msg = ("Could not send to upstream: One or more labels"
+                       " not approved.")
+                logger.debug("Change %s: %s" % (self.change_id, msg))
+                ssh.exec_once('gerrit review -m %s %s'
+                              % (pipes.quote(msg), self.revision))
+                return
 
         # Do some git stuffs to push upstream
         logger.debug("Change %s: Sending to upstream" % self.change_id)
