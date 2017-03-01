@@ -689,8 +689,8 @@ class CommentAdded(object):
                 ssh.exec_once('gerrit review -m %s %s'
                               % (pipes.quote(msg), self.revision))
                 return
-            msg = ("***WARNING***\n%s (%s) has requested a forced upstream "
-                   "push. Bypassing all votes except for Release...\n\n"
+            msg = ("%s (%s) has requested a forced upstream push. "
+                   "Bypassing all votes except for Release...\n\n "
                    "Current votes are:\n\n%s"
                    % (self._data['author']['name'],
                       self._data['author']['email'],
