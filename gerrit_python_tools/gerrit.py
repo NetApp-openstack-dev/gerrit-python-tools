@@ -26,6 +26,25 @@ logger = log.get_logger()
 
 PRESERVE_ALL_BRANCHES = "ALL"
 
+GERRIT_SYSTEM_GROUPS = [
+    {
+        'uuid': 'global:Anonymous-Users',
+        'name': 'Anonymous Users',
+    },
+    {
+        'uuid': 'global:Registered-Users',
+        'name': 'Registered Users',
+    },
+    {
+        'uuid': 'global:Change-Owner',
+        'name': 'Change Owner',
+    },
+    {
+        'uuid': 'global:Project-Owners',
+        'name': 'Project Owners',
+    },
+]
+
 
 class SSHStream(StoppableThread):
     """
@@ -1017,7 +1036,6 @@ class User(object):
     def full_name(self):
         """
         Returns the full name or None
-k
         @returns String|None
 
         """
@@ -1031,7 +1049,7 @@ k
         @return String|None
 
         """
-        return self._data.get('email', None)
+        return self._data.get('email')
 
     @property
     def http_password(self):
@@ -1040,6 +1058,8 @@ k
 
         @return String|None
         """
+        return self._data.get('http-password')
+
     def get_create(self):
         """
         Returns the gerrit command to create this account.
@@ -1107,7 +1127,10 @@ k
             print msg
             return True
 
-        msg = "User %s: Unable to create - %s" % (self.username, out)
+        msg = ("User %(user)s: Unable to create. Response from server: "
+               "%(ret)s: %(response)s" % {'user': self.username,
+                                          'ret': retcode,
+                                          'response': out})
         logger.error(msg)
         print msg
         return False
@@ -1159,7 +1182,7 @@ class Project(object):
         @returns String|None
 
         """
-        return self._data.get('config', None)
+        return self._data.get('config')
 
     @property
     def source(self):
@@ -1170,7 +1193,7 @@ class Project(object):
         @returns String|None
 
         """
-        return self._data.get('source', None)
+        return self._data.get('source')
 
     @property
     def preserve_prefix(self):
@@ -1180,7 +1203,7 @@ class Project(object):
 
         @returns String|None
         """
-        return self._data.get('preserve_prefix', None)
+        return self._data.get('preserve_prefix')
 
     @property
     def heads(self):
@@ -1289,6 +1312,8 @@ class Project(object):
 
             git.add_remote(origin, ssh_url)
 
+            print("Git remote is here: %s " % ssh_url)
+
             # Fetch refs/meta/config for project
             refspec = 'refs/meta/config:refs/remotes/origin/meta/config'
             git.fetch(origin, refspec)
@@ -1330,6 +1355,10 @@ class Project(object):
 
                 # Update groups file
                 group_contents = groups_file_contents(groups)
+                logger.debug("ALL GROUP FILE CONTENTS: %s" % group_contents)
+                print("All group contents: %s" % group_contents)
+
+
                 _file = os.path.join(repo_dir, 'groups')
                 with open(_file, 'w') as f:
                     f.write(group_contents)
@@ -1506,6 +1535,8 @@ class Project(object):
         # Get list of groups for building groups file
         groups = get_groups(remote)
 
+        logger.info("Groups on the server: %s" % groups)
+
         # Create Project if needed
         self._create(ssh)
 
@@ -1558,10 +1589,13 @@ def get_groups(remote):
     return groups
 
 
-def groups_file_contents(groups):
+def groups_file_contents(groups, add_system_groups=True):
     """
     Creates the contents of a groups file to be saved with a project's
     configuration.
+
+    "System Groups": These groups are not user visible or persisted in the
+    Gerrit Database. They exist however, and are enforced globally by Gerrit.
 
     @param groups - List of gerrit.Group objects
     @return String
@@ -1570,6 +1604,11 @@ def groups_file_contents(groups):
     _buffer = StringIO.StringIO()
     for g in groups:
         _buffer.write("%s\t%s\n" % (g.uuid, g.name))
+
+    if add_system_groups:
+        for sg in GERRIT_SYSTEM_GROUPS:
+            _buffer.write("%s\t%s\n" % (sg['uuid'], sg['name']))
+
     return _buffer.getvalue()
 
 

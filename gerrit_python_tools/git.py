@@ -33,6 +33,7 @@ def git_cmd(args):
 
     """
     msg = " ". join(args)
+    print("Issuing git command %s" % msg)
     logger.debug(msg)
     subprocess.check_call(args)
 

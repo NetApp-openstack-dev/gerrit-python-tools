@@ -72,7 +72,7 @@ def pull_upstream(_config, stream, pool, schedule, yaml_file):
 def service(yaml_file):
     """
     Initializes a downstream event listener, an upstream event listener,
-    and a threadpool to handle events from both. Also sets up a schdule
+    and a threadpool to handle events from both. Also sets up a schedule
     if things need to be delayed.
 
     Runs in infinite loop until killed.

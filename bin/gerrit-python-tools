@@ -12,14 +12,14 @@ def get_args():
 
     """
     # Description
-    description = ("Runs service that performs various actions provided by"
-                   " gerrit-python-tools.")
+    description = ("Runs service that performs various actions provided by "
+                   "gerrit-python-tools.")
     parser = argparse.ArgumentParser(description=description)
 
     # Configuration file location - Optional
     default_config = '/etc/gerrit-python-tools/projects.yaml'
     parser.add_argument('--config', type=str, default=default_config,
-                        help="Path to yaml file(default: %s" % default_config)
+                        help="Path to yaml file(default: %s)" % default_config)
 
     # Parse and return args
     args = parser.parse_args()
