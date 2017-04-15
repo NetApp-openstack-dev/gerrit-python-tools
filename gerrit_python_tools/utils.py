@@ -17,7 +17,8 @@ class MultiJSON(object):
 
         """
         buffer_ = cStringIO.StringIO(data)
-        self.objects = [json.loads(line) for line in buffer_.readlines()]
+        self.objects = [json.loads(line, strict=False)
+                        for line in buffer_.readlines()]
 
     def __getitem__(self, index):
         """
