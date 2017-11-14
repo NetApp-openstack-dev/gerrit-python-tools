@@ -744,9 +744,6 @@ class CommentAdded(object):
                 "Change %s: Created directory %s" % (self.change_id, repo_dir)
             )
 
-        # Save the current working directory
-        old_cwd = os.getcwd()
-
         try:
             # Change to newly created directory.
             os.chdir(repo_dir)
@@ -834,9 +831,6 @@ class CommentAdded(object):
                                  % self.change_id)
 
         finally:
-            # Change to old current working directory
-            os.chdir(old_cwd)
-
             # Attempt to clean up created directory
             shutil.rmtree(repo_dir)
 
